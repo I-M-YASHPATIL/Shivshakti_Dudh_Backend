@@ -328,4 +328,11 @@ public class DairyController {
             @PathVariable Long entryId) {
         return ResponseEntity.ok(ledgerService.deleteEntry(branchCode, number, entryId));
     }
+    @PutMapping("/{branchCode}/entries/{id}")
+public ResponseEntity<DairyDTOs.MilkEntryResponse> updateEntry(
+        @PathVariable String branchCode,
+        @PathVariable Long id,
+        @Valid @RequestBody DairyDTOs.MilkEntryRequest request) {
+    return ResponseEntity.ok(milkEntryService.updateEntry(branchCode, id, request));
+}
 }
