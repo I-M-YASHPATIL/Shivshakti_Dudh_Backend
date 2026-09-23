@@ -114,6 +114,62 @@ public class MilkEntryService {
     }
 
 
+    @Transactional
+    public DairyDTOs.MilkEntryResponse updateEntry(
+            String branchCode, Long id, DairyDTOs.MilkEntryRequest request) {
+
+        MilkEntry entry = milkEntryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Milk entry not found with id: " + id));
+
+        Farmer farmer = farmerService.findFarmerEntityByNumber(
+                branchCode, request.getFarmerNumber());
+
+        MilkEntry.Session  session  = parseSession(request.getSession());
+        MilkEntry.MilkType milkType = resolveMilkType(farmer, request.getMilkType());
+
+        validateFat(request.getFat(), milkType);
+
+        // Duplicate check, ignoring the entry we're currently editing
+        if (milkEntryRepository.existsByFarmerIdAndEntryDateAndSessionAndMilkTypeAndIdNot(
+                farmer.getId(), request.getEntryDate(), session, milkType, id)) {
+            throw new IllegalStateException(
+                    "Another entry already exists for farmer #" + request.getFarmerNumber() +
+                            " (" + farmer.getName() + ") on " + request.getEntryDate() +
+                            " - " + session + " session - " + milkType + " milk" +
+                            " [branch: " + branchCode + "]");
+        }
+
+        Long branchId = farmer.getBranch().getId();
+        FatRate fatRate = fatRateRepository
+                .findByBranchIdAndFatPercentageAndMilkTypeAndSnf(
+                        branchId, request.getFat(), milkType, request.getSnf())
+                .orElseThrow(() -> new RuntimeException(
+                        "No rate configured for fat " + request.getFat() + "%, snf " + request.getSnf() +
+                                " (" + milkType + " milk) in branch " + branchCode + "."));
+
+        BigDecimal amount = request.getLiters()
+                .multiply(fatRate.getRatePerLiter())
+                .setScale(2, RoundingMode.HALF_UP);
+
+        entry.setFarmer(farmer);
+        entry.setEntryDate(request.getEntryDate());
+        entry.setSession(session);
+        entry.setMilkType(milkType);
+        entry.setLiters(request.getLiters());
+        entry.setFat(request.getFat());
+        entry.setSnf(request.getSnf());
+        entry.setRatePerLiter(fatRate.getRatePerLiter());
+        entry.setAmount(amount);
+
+        MilkEntry saved = milkEntryRepository.save(entry);
+        log.info("Milk entry updated: id={}, branch={}, farmer={}, date={}, session={}, " +
+                        "milkType={}, liters={}, fat={}, snf={}, amount={}",
+                id, branchCode, farmer.getFarmerNumber(), request.getEntryDate(), session,
+                milkType, request.getLiters(), request.getFat(), request.getSnf(), amount);
+        return toDTO(saved);
+    }
+
+
     public List<DairyDTOs.MilkEntryResponse> getEntriesByDate(
             String branchCode, LocalDate date) {
         Long branchId = farmerService.getBranchIdByCode(branchCode);
