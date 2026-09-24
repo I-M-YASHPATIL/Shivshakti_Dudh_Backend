@@ -42,20 +42,14 @@ public class LedgerEntry {
     @Column(name = "entry_date", nullable = false)
     private LocalDate entryDate;
 
-    // Only set for JAMA entries that are tied to a specific milk bill period
     @Column(name = "bill_from_date")
     private LocalDate billFromDate;
 
     @Column(name = "bill_to_date")
     private LocalDate billToDate;
 
-    // Only meaningful for JAMA entries of a farmer who supplies BOTH cow and
-    // buffalo milk: tells the payment register which section (गाय / म्हैस)
-    // this जमा should be counted against, instead of splitting it
-    // proportionally. Null/omitted for farmers who supply only one type,
-    // or for legacy entries recorded before this field existed.
     @Column(name = "milk_type", length = 10)
-    private String milkType;   // "COW" | "BUFFALO" | "BOTH" | null
+    private String milkType; 
 
     @Column(name = "note", length = 255)
     private String note;
@@ -69,8 +63,8 @@ public class LedgerEntry {
     }
 
     public enum Type {
-        UCHAL,    // उचल  - advance drawn by the farmer, increases बाकी
-        LAGAVAD,  // लागवड - another advance type, also increases बाकी
-        JAMA      // जमा  - credit/repayment, decreases बाकी
+        UCHAL,    
+        LAGAVAD,  
+        JAMA     
     }
 }

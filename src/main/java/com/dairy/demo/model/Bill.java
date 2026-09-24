@@ -89,7 +89,7 @@ public class Bill {
 
     @Column(name = "sadilvar", precision = 10, scale = 2)
     @Builder.Default
-    private BigDecimal sadilvar = new BigDecimal("5.00");
+    private BigDecimal sadilvar = new BigDecimal("6.00");
 
     @Column(name = "advance_deduction", precision = 10, scale = 2)
     @Builder.Default

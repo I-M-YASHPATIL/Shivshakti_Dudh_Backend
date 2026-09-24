@@ -29,7 +29,6 @@ public class FatRate {
     @Column(name = "fat_percentage", nullable = false, precision = 4, scale = 1)
     private BigDecimal fatPercentage;
 
-    // Optional — only meaningful when provided; valid ranges enforced in service layer
     @Column(name = "snf", precision = 3, scale = 1)
     private BigDecimal snf;
 

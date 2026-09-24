@@ -4,23 +4,16 @@ import com.dairy.demo.model.Bill;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface BillRepository extends JpaRepository<Bill, Long> {
-
-    // ─── Basic Finders ────────────────────────────────────────────────────────
 
     List<Bill> findByFarmerIdOrderByFromDateDesc(Long farmerId);
 
     Optional<Bill> findByFarmerIdAndFromDateAndToDate(
             Long farmerId, LocalDate from, LocalDate to);
-
-    // ─── Branch-scoped Finders ─────────────────────────────────────────────────
 
     List<Bill> findByFarmerBranchIdAndFromDateAndToDateOrderByFarmerFarmerNumberAsc(
             Long branchId, LocalDate from, LocalDate to);
@@ -30,8 +23,6 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
 
     List<Bill> findByFarmerIdAndIsPaidOrderByFromDateDesc(
             Long farmerId, Boolean isPaid);
-
-    // ─── Branch-scoped: Farmer date range ─────────────────────────────────────
 
     @Query("""
         SELECT b FROM Bill b
@@ -43,8 +34,6 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
             @Param("farmerId") Long farmerId,
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
-
-    // ─── Branch-scoped: Period Summary ─────────────────────────────────────────
 
     @Query("""
         SELECT SUM(b.totalLiters), SUM(b.totalAmount),
@@ -58,7 +47,6 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
-    // Full breakdown: cow/buffalo + session totals, scoped to branch
     @Query("""
         SELECT
             SUM(b.totalLiters),     SUM(b.totalAmount),
@@ -75,7 +63,6 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
-    // ─── Branch-scoped: Unpaid summary per farmer ──────────────────────────────
 
     @Query("""
         SELECT b.farmer.farmerNumber, b.farmer.name, COUNT(b),

@@ -32,7 +32,7 @@ public class BillService {
     private final FarmerService farmerService;
 
     private static final BigDecimal DEFAULT_SAVING_PERCENT = new BigDecimal("3.00");
-    private static final BigDecimal SADILVAR_DEDUCTION = new BigDecimal("10.00");
+    private static final BigDecimal SADILVAR_DEDUCTION = new BigDecimal("6.00");
 
 
     @Transactional
@@ -109,7 +109,7 @@ public class BillService {
         BigDecimal advance  = nvl(request.getAdvanceDeduction());
         BigDecimal other    = nvl(request.getOtherDeductions());
 
-        // netAmount = totalAmount - savingDeduction - sadilvar(5) - advance - otherDeductions
+        // netAmount = totalAmount - savingDeduction - sadilvar(6) - advance - otherDeductions
         BigDecimal netAmount = totalAmount
                 .subtract(savingDeduction)
                 .subtract(SADILVAR_DEDUCTION)

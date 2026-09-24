@@ -4,33 +4,24 @@ import com.dairy.demo.model.MilkEntry;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDate;
 import java.util.List;
 
-@Repository
 public interface MilkEntryRepository extends JpaRepository<MilkEntry, Long> {
 
-    // ─── Duplicate Check ───────────────────────────────────────────────────────
 
     boolean existsByFarmerIdAndEntryDateAndSessionAndMilkType(
             Long farmerId, LocalDate date,
             MilkEntry.Session session, MilkEntry.MilkType milkType);
 
-    // Same duplicate check as above, but excludes the entry being edited
-    // (so saving an update without changing date/session/milkType doesn't
-    // trip over itself).
     boolean existsByFarmerIdAndEntryDateAndSessionAndMilkTypeAndIdNot(
             Long farmerId, LocalDate date,
             MilkEntry.Session session, MilkEntry.MilkType milkType, Long id);
 
-    // ─── By Farmer ID (used internally by BillService) ─────────────────────────
 
     List<MilkEntry> findByFarmerIdAndEntryDateBetweenOrderByEntryDateAscSessionAsc(
             Long farmerId, LocalDate from, LocalDate to);
 
-    // ─── Branch-scoped: Date queries ───────────────────────────────────────────
 
     List<MilkEntry> findByFarmerBranchIdAndEntryDateOrderByFarmerFarmerNumberAscSessionAsc(
             Long branchId, LocalDate date);
@@ -38,12 +29,9 @@ public interface MilkEntryRepository extends JpaRepository<MilkEntry, Long> {
     List<MilkEntry> findByFarmerBranchIdAndEntryDateAndSessionOrderByFarmerFarmerNumberAsc(
             Long branchId, LocalDate date, MilkEntry.Session session);
 
-    // ─── Branch-scoped: Date range queries ────────────────────────────────────
-
     List<MilkEntry> findByFarmerBranchIdAndEntryDateBetweenOrderByFarmerFarmerNumberAscEntryDateAscSessionAsc(
             Long branchId, LocalDate from, LocalDate to);
 
-    // ─── Branch-scoped: Flexible filter (session and milkType nullable) ────────
 
     @Query("""
         SELECT e FROM MilkEntry e
@@ -59,7 +47,6 @@ public interface MilkEntryRepository extends JpaRepository<MilkEntry, Long> {
             @Param("session")  MilkEntry.Session session,
             @Param("milkType") MilkEntry.MilkType milkType);
 
-    // ─── Branch-scoped: Summary queries ───────────────────────────────────────
 
     @Query("""
         SELECT m.farmer.id, m.session,
