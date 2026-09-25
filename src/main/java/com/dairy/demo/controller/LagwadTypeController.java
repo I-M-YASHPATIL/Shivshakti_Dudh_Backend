@@ -25,17 +25,22 @@ import java.util.stream.Collectors;
 public class LagwadTypeController {
 
     private final LagwadTypeRepository lagwadTypeRepository;
-    private final BranchService        branchService;
+    private final BranchService branchService;
 
+ 
     @Data
     public static class LagwadTypeDTO {
+
         private Long id;
 
         @NotBlank(message = "लागवड प्रकाराचे नाव टाका")
         private String name;
 
         @NotNull(message = "किंमत टाका")
-        @DecimalMin(value = "0.01", message = "किंमत 0 पेक्षा जास्त हवी")
+        @DecimalMin(
+                value = "0.01",
+                message = "किंमत 0 पेक्षा जास्त हवी"
+        )
         private BigDecimal price;
 
         private String unit;
@@ -43,11 +48,21 @@ public class LagwadTypeController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    public ResponseEntity<List<LagwadTypeDTO>> getAll(@PathVariable String branchCode) {
-        Long branchId = branchService.findBranchEntityByCode(branchCode).getId();
-        return ResponseEntity.ok(
-                lagwadTypeRepository.findByBranchIdOrderByNameAsc(branchId)
-                        .stream().map(this::toDTO).collect(Collectors.toList()));
+    public ResponseEntity<List<LagwadTypeDTO>> getAll(
+            @PathVariable String branchCode) {
+
+        Long branchId = branchService
+                .findBranchEntityByCode(branchCode)
+                .getId();
+
+        List<LagwadTypeDTO> result =
+                lagwadTypeRepository
+                        .findByBranchIdOrderByNameAsc(branchId)
+                        .stream()
+                        .map(this::toDTO)
+                        .collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
@@ -55,19 +70,32 @@ public class LagwadTypeController {
     public ResponseEntity<LagwadTypeDTO> create(
             @PathVariable String branchCode,
             @Valid @RequestBody LagwadTypeDTO dto) {
-        Branch branch = branchService.findBranchEntityByCode(branchCode);
+
+        Branch branch =
+                branchService.findBranchEntityByCode(branchCode);
+
         String name = dto.getName().trim();
 
-        if (lagwadTypeRepository.existsByBranchIdAndNameIgnoreCase(branch.getId(), name)) {
-            throw new IllegalStateException("हा लागवड प्रकार आधीपासून आहे: " + name);
+        if (lagwadTypeRepository
+                .existsByBranchIdAndNameIgnoreCase(
+                        branch.getId(),
+                        name)) {
+
+            throw new IllegalStateException(
+                    "हा लागवड प्रकार आधीपासून आहे: " + name
+            );
         }
 
-        LagwadType saved = lagwadTypeRepository.save(LagwadType.builder()
+        LagwadType lagwadType = LagwadType.builder()
                 .branch(branch)
                 .name(name)
                 .price(dto.getPrice())
                 .unit(cleanUnit(dto.getUnit()))
-                .build());
+                .build();
+
+        LagwadType saved =
+                lagwadTypeRepository.save(lagwadType);
+
         return ResponseEntity.ok(toDTO(saved));
     }
 
@@ -77,20 +105,42 @@ public class LagwadTypeController {
             @PathVariable String branchCode,
             @PathVariable Long id,
             @Valid @RequestBody LagwadTypeDTO dto) {
-        Branch branch = branchService.findBranchEntityByCode(branchCode);
-        LagwadType lt = lagwadTypeRepository.findById(id)
-                .filter(x -> x.getBranch().getId().equals(branch.getId()))
-                .orElseThrow(() -> new RuntimeException("लागवड प्रकार सापडला नाही"));
+
+        Branch branch =
+                branchService.findBranchEntityByCode(branchCode);
+
+        LagwadType lagwadType =
+                lagwadTypeRepository.findById(id)
+                        .filter(existing ->
+                                existing.getBranch()
+                                        .getId()
+                                        .equals(branch.getId()))
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "लागवड प्रकार सापडला नाही"
+                                ));
 
         String name = dto.getName().trim();
-        if (lagwadTypeRepository.existsByBranchIdAndNameIgnoreCaseAndIdNot(branch.getId(), name, id)) {
-            throw new IllegalStateException("हा लागवड प्रकार आधीपासून आहे: " + name);
+
+        if (lagwadTypeRepository
+                .existsByBranchIdAndNameIgnoreCaseAndIdNot(
+                        branch.getId(),
+                        name,
+                        id)) {
+
+            throw new IllegalStateException(
+                    "हा लागवड प्रकार आधीपासून आहे: " + name
+            );
         }
 
-        lt.setName(name);
-        lt.setPrice(dto.getPrice());
-        lt.setUnit(cleanUnit(dto.getUnit()));
-        return ResponseEntity.ok(toDTO(lagwadTypeRepository.save(lt)));
+        lagwadType.setName(name);
+        lagwadType.setPrice(dto.getPrice());
+        lagwadType.setUnit(cleanUnit(dto.getUnit()));
+
+        LagwadType updated =
+                lagwadTypeRepository.save(lagwadType);
+
+        return ResponseEntity.ok(toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
@@ -98,24 +148,45 @@ public class LagwadTypeController {
     public ResponseEntity<Void> delete(
             @PathVariable String branchCode,
             @PathVariable Long id) {
-        Branch branch = branchService.findBranchEntityByCode(branchCode);
-        LagwadType lt = lagwadTypeRepository.findById(id)
-                .filter(x -> x.getBranch().getId().equals(branch.getId()))
-                .orElseThrow(() -> new RuntimeException("लागवड प्रकार सापडला नाही"));
-        lagwadTypeRepository.delete(lt);
+
+        Branch branch =
+                branchService.findBranchEntityByCode(branchCode);
+
+        LagwadType lagwadType =
+                lagwadTypeRepository.findById(id)
+                        .filter(existing ->
+                                existing.getBranch()
+                                        .getId()
+                                        .equals(branch.getId()))
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "लागवड प्रकार सापडला नाही"
+                                ));
+
+        lagwadTypeRepository.delete(lagwadType);
+
         return ResponseEntity.ok().build();
     }
 
     private String cleanUnit(String unit) {
-        return (unit == null || unit.isBlank()) ? null : unit.trim();
+
+        if (unit == null || unit.isBlank()) {
+            return null;
+        }
+
+        return unit.trim();
     }
 
-    private LagwadTypeDTO toDTO(LagwadType lt) {
-        LagwadTypeDTO d = new LagwadTypeDTO();
-        d.setId(lt.getId());
-        d.setName(lt.getName());
-        d.setPrice(lt.getPrice());
-        d.setUnit(lt.getUnit());
-        return d;
+
+    private LagwadTypeDTO toDTO(LagwadType lagwadType) {
+
+        LagwadTypeDTO dto = new LagwadTypeDTO();
+
+        dto.setId(lagwadType.getId());
+        dto.setName(lagwadType.getName());
+        dto.setPrice(lagwadType.getPrice());
+        dto.setUnit(lagwadType.getUnit());
+
+        return dto;
     }
 }
